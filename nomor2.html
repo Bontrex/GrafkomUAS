@@ -24,14 +24,16 @@
         border: 1px solid #cbd5e1;
         margin-bottom: 20px;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        overflow-x: auto; /* Mencegah rumus meluber keluar kotak */
       }
       .step-title {
         font-weight: bold;
         color: #1e293b;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         display: block;
         border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 5px;
+        padding-bottom: 8px;
+        font-size: 1.1rem;
       }
       #canvas-container {
         width: 100%;
@@ -39,6 +41,10 @@
         background-color: #0f172a;
         border-radius: 1rem;
         overflow: hidden;
+      }
+      /* Menyesuaikan ukuran font KaTeX agar pas di layar */
+      .katex {
+        font-size: 1.05em !important;
       }
     </style>
   </head>
@@ -49,7 +55,6 @@
       </h1>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Panel Input -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h2 class="text-xl font-bold mb-4">Input Parameter</h2>
           <div class="grid grid-cols-2 gap-4">
@@ -161,24 +166,27 @@
           </div>
         </div>
 
-        <!-- Panel Matematika -->
         <div class="space-y-6">
           <div class="math-block">
             <span class="step-title">1. View Matrix (V)</span>
             <div id="math-view"></div>
-            <div id="steps-view" class="mt-4 text-sm text-slate-600"></div>
           </div>
           <div class="math-block">
             <span class="step-title">2. Projection Matrix (P)</span>
             <div id="math-proj"></div>
-            <div id="steps-proj" class="mt-4 text-sm text-slate-600"></div>
           </div>
         </div>
       </div>
     </div>
 
     <script>
-      let scene, renderer, obsCamera, controls, simCamera, cameraHelper;
+      let scene,
+        renderer,
+        obsCamera,
+        controls,
+        simCamera,
+        cameraHelper,
+        targetSphere;
 
       function init3D() {
         const canvas = document.getElementById("visCanvas");
@@ -201,6 +209,11 @@
         simCamera = new THREE.PerspectiveCamera(45, 1.77, 0.1, 34);
         cameraHelper = new THREE.CameraHelper(simCamera);
         scene.add(cameraHelper);
+        // Membuat bola sebagai target visual
+        const sphereGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Warna merah
+        targetSphere = new THREE.Mesh(sphereGeo, sphereMat);
+        scene.add(targetSphere);
         animate();
       }
 
@@ -211,6 +224,7 @@
       }
 
       function update() {
+        // Ambil Nilai
         const e = new THREE.Vector3(
           parseFloat(document.getElementById("eyeX").value),
           parseFloat(document.getElementById("eyeY").value),
@@ -221,6 +235,8 @@
           parseFloat(document.getElementById("centerY").value),
           parseFloat(document.getElementById("centerZ").value),
         );
+        // Update posisi bola agar sama dengan titik target (Center)
+        targetSphere.position.copy(c);
         const roll =
           (parseFloat(document.getElementById("upRoll").value) * Math.PI) / 180;
         const fov = parseFloat(document.getElementById("fov").value);
@@ -228,6 +244,7 @@
         const n = parseFloat(document.getElementById("near").value);
         const f = parseFloat(document.getElementById("far").value);
 
+        // Update Kamera Three.js
         simCamera.position.copy(e);
         simCamera.up.set(-Math.sin(roll), Math.cos(roll), 0);
         simCamera.lookAt(c);
@@ -239,31 +256,74 @@
         simCamera.updateMatrixWorld();
         cameraHelper.update();
 
+        // Hitung manual untuk divisualisasikan
         const fwd = new THREE.Vector3().subVectors(c, e).normalize();
         const right = new THREE.Vector3()
           .crossVectors(fwd, simCamera.up)
           .normalize();
         const up = new THREE.Vector3().crossVectors(right, fwd);
+
         const sy = 1 / Math.tan((fov * Math.PI) / 180 / 2);
         const sx = sy / aspect;
-        const m = simCamera.matrixWorldInverse.elements;
-        const p = simCamera.projectionMatrix.elements;
+        const A = -(f + n) / (f - n);
+        const B = -(2 * f * n) / (f - n);
 
-        katex.render(
-          `V = \\begin{pmatrix} ${right.x.toFixed(2)} & ${right.y.toFixed(2)} & ${right.z.toFixed(2)} & ${-right.dot(e).toFixed(2)} \\\\ ${up.x.toFixed(2)} & ${up.y.toFixed(2)} & ${up.z.toFixed(2)} & ${-up.dot(e).toFixed(2)} \\\\ ${-fwd.x.toFixed(2)} & ${-fwd.y.toFixed(2)} & ${-fwd.z.toFixed(2)} & ${fwd.dot(e).toFixed(2)} \\\\ 0 & 0 & 0 & 1 \\end{pmatrix}`,
-          document.getElementById("math-view"),
-        );
+        // String LaTeX menggunakan String.raw agar backslash (\) tidak perlu di-escape ganda
+        const viewFormula = String.raw`
+        \begin{aligned}
+        \mathbf{e} &= \begin{pmatrix} ${e.x.toFixed(2)} \\ ${e.y.toFixed(2)} \\ ${e.z.toFixed(2)} \end{pmatrix}, \quad 
+        \mathbf{c} = \begin{pmatrix} ${c.x.toFixed(2)} \\ ${c.y.toFixed(2)} \\ ${c.z.toFixed(2)} \end{pmatrix} \\[1.5em]
+        \mathbf{f} &= \text{norm}(\mathbf{c} - \mathbf{e}) = \begin{pmatrix} ${fwd.x.toFixed(2)} \\ ${fwd.y.toFixed(2)} \\ ${fwd.z.toFixed(2)} \end{pmatrix} \\[1.5em]
+        \mathbf{r} &= \text{norm}(\mathbf{f} \times \mathbf{up}) = \begin{pmatrix} ${right.x.toFixed(2)} \\ ${right.y.toFixed(2)} \\ ${right.z.toFixed(2)} \end{pmatrix} \\[1.5em]
+        \mathbf{u} &= \mathbf{r} \times \mathbf{f} = \begin{pmatrix} ${up.x.toFixed(2)} \\ ${up.y.toFixed(2)} \\ ${up.z.toFixed(2)} \end{pmatrix} \\[1.5em]
+        V &= \begin{pmatrix}
+        r_x & r_y & r_z & -\mathbf{r} \cdot \mathbf{e} \\
+        u_x & u_y & u_z & -\mathbf{u} \cdot \mathbf{e} \\
+        -f_x & -f_y & -f_z & \mathbf{f} \cdot \mathbf{e} \\
+        0 & 0 & 0 & 1
+        \end{pmatrix} \\[1.5em]
+        &= \begin{pmatrix}
+        ${right.x.toFixed(2)} & ${right.y.toFixed(2)} & ${right.z.toFixed(2)} & ${-right.dot(e).toFixed(2)} \\
+        ${up.x.toFixed(2)} & ${up.y.toFixed(2)} & ${up.z.toFixed(2)} & ${-up.dot(e).toFixed(2)} \\
+        ${-fwd.x.toFixed(2)} & ${-fwd.y.toFixed(2)} & ${-fwd.z.toFixed(2)} & ${fwd.dot(e).toFixed(2)} \\
+        0 & 0 & 0 & 1
+        \end{pmatrix}
+        \end{aligned}
+        `;
 
-        katex.render(
-          `P = \\begin{pmatrix} ${sx.toFixed(2)} & 0 & 0 & 0 \\\\ 0 & ${sy.toFixed(2)} & 0 & 0 \\\\ 0 & 0 & ${-(f + n) / (f - n).toFixed(2)} & ${-(2 * f * n) / (f - n).toFixed(2)} \\\\ 0 & 0 & -1 & 0 \\end{pmatrix}`,
-          document.getElementById("math-proj"),
-        );
+        const projFormula = String.raw`
+        \begin{aligned}
+        S_y &= \frac{1}{\tan(\frac{FOV}{2})} = \frac{1}{\tan(${fov / 2}^\circ)} = ${sy.toFixed(2)} \\[1.5em]
+        S_x &= \frac{S_y}{\text{Aspect}} = \frac{${sy.toFixed(2)}}{${aspect.toFixed(2)}} = ${sx.toFixed(2)} \\[1.5em]
+        Z_{scale} &= -\frac{f+n}{f-n} = -\frac{${f.toFixed(2)} + ${n.toFixed(2)}}{${f.toFixed(2)} - ${n.toFixed(2)}} = ${A.toFixed(2)} \\[1.5em]
+        Z_{trans} &= -\frac{2fn}{f-n} = -\frac{2(${f.toFixed(2)})(${n.toFixed(2)})}{${f.toFixed(2)} - ${n.toFixed(2)}} = ${B.toFixed(2)} \\[1.5em]
+        P &= \begin{pmatrix}
+        S_x & 0 & 0 & 0 \\
+        0 & S_y & 0 & 0 \\
+        0 & 0 & Z_{scale} & Z_{trans} \\
+        0 & 0 & -1 & 0
+        \end{pmatrix} \\[1.5em]
+        &= \begin{pmatrix}
+        ${sx.toFixed(2)} & 0 & 0 & 0 \\
+        0 & ${sy.toFixed(2)} & 0 & 0 \\
+        0 & 0 & ${A.toFixed(2)} & ${B.toFixed(2)} \\
+        0 & 0 & -1 & 0
+        \end{pmatrix}
+        \end{aligned}
+        `;
 
-        document.getElementById("steps-view").innerHTML =
-          `Langkah V: <br>1. Basis: Forward (f) = norm(C-E), Right (r) = norm(f x Up), Up' = r x f.<br>2. Konstruksi matriks rotasi (3x3) diikuti translasi dengan dot product dari -Eye.`;
-        document.getElementById("steps-proj").innerHTML =
-          `Langkah P: <br>1. $S_y = 1 / \\tan(\\frac{FOV}{2}) = ${sy.toFixed(2)}$.<br>2. $S_x = S_y / Aspect = ${sx.toFixed(2)}$.<br>3. Pemetaan Z: $m_{33} = -\\frac{f+n}{f-n}$, $m_{34} = -\\frac{2fn}{f-n}$.`;
+        // Render dengan displayMode agar tampilannya besar di tengah
+        katex.render(viewFormula, document.getElementById("math-view"), {
+          displayMode: true,
+          throwOnError: false,
+        });
+
+        katex.render(projFormula, document.getElementById("math-proj"), {
+          displayMode: true,
+          throwOnError: false,
+        });
       }
+
       window.onload = () => {
         init3D();
         document
