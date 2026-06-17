@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalkulator Cahaya Diffuse Interaktif - Versi Slider</title>
+    <!-- Memuat KaTeX untuk Render Rumus Matematika -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f6f9;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        height: max-content;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #2c3e50;
+        margin-top: 0;
+      }
+      h3 {
+        margin-top: 15px;
+        border-bottom: 2px solid #eef2f5;
+        padding-bottom: 5px;
+        font-size: 1.1em;
+      }
+
+      /* Layout Komponen Slider + Input Angka */
+      .input-row {
+        display: grid;
+        grid-template-columns: 80px 1fr 80px;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .input-row label {
+        font-size: 0.85em;
+        font-weight: bold;
+        color: #555;
+      }
+      input[type="range"] {
+        width: 100%;
+        cursor: pointer;
+      }
+      input[type="number"] {
+        width: 100%;
+        padding: 5px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        text-align: center;
+      }
+
+      .vertex-block,
+      .color-block,
+      .light-item {
+        background: #fdfdfd;
+        border: 1px solid #eaeaea;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 6px;
+      }
+      .light-item {
+        border-left: 4px solid #f1c40f;
+      }
+
+      button {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        font-weight: bold;
+        width: 100%;
+        font-size: 1em;
+      }
+      button:hover {
+        background: #2980b9;
+      }
+      .btn-danger {
+        background: #e74c3c;
+        margin-top: 5px;
+        padding: 6px;
+        font-size: 0.85em;
+      }
+      .btn-danger:hover {
+        background: #c0392b;
+      }
+
+      .step {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-left: 4px solid #3498db;
+        overflow-x: auto;
+      }
+      canvas {
+        width: 100%;
+        height: 350px;
+        background: #eef2f5;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-bottom: 15px;
+      }
+      .result-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #2c3e50;
+        color: white;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+      }
+      .color-preview {
+        width: 60px;
+        height: 60px;
+        border: 2px solid #fff;
+        border-radius: 4px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      }
+
+      @media (max-width: 900px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="text-align: center; margin-bottom: 30px">
+      Kalkulator Grafika Komputer: Pencahayaan Diffuse Klasik
+    </h1>
+
+    <div class="container">
+      <!-- PANEL INPUT KIRI -->
+      <div class="card">
+        <h2>Parameter Input (Slider & Manual)</h2>
+
+        <!-- INPUT VERTEX -->
+        <h3>1. Koordinat Vertex Segitiga Bidang</h3>
+        <!-- Vertex 1 -->
+        <div class="vertex-block">
+          <strong>Vertex 1 (V1)</strong>
+          <div class="input-row">
+            <label>X-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="5"
+              id="v1x_sld"
+              oninput="sync('v1x', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="5"
+              id="v1x_num"
+              oninput="sync('v1x', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label>Y-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v1y_sld"
+              oninput="sync('v1y', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v1y_num"
+              oninput="sync('v1y', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label>Z-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v1z_sld"
+              oninput="sync('v1z', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v1z_num"
+              oninput="sync('v1z', this.value, 'sld')"
+            />
+          </div>
+        </div>
+
+        <!-- Vertex 2 -->
+        <div class="vertex-block">
+          <strong>Vertex 2 (V2)</strong>
+          <div class="input-row">
+            <label>X-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v2x_sld"
+              oninput="sync('v2x', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v2x_num"
+              oninput="sync('v2x', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label>Y-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="5"
+              id="v2y_sld"
+              oninput="sync('v2y', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="5"
+              id="v2y_num"
+              oninput="sync('v2y', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label>Z-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v2z_sld"
+              oninput="sync('v2z', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v2z_num"
+              oninput="sync('v2z', this.value, 'sld')"
+            />
+          </div>
+        </div>
+
+        <!-- Vertex 3 -->
+        <div class="vertex-block">
+          <strong>Vertex 3 (V3)</strong>
+          <div class="input-row">
+            <label>X-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v3x_sld"
+              oninput="sync('v3x', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v3x_num"
+              oninput="sync('v3x', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label>Y-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v3y_sld"
+              oninput="sync('v3y', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="0"
+              id="v3y_num"
+              oninput="sync('v3y', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label>Z-Axis</label>
+            <input
+              type="range"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="5"
+              id="v3z_sld"
+              oninput="sync('v3z', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="-20"
+              max="20"
+              step="0.5"
+              value="5"
+              id="v3z_num"
+              oninput="sync('v3z', this.value, 'sld')"
+            />
+          </div>
+        </div>
+
+        <!-- INPUT WARNA MATERIAL -->
+        <h3>2. Warna Dasar Material Bidang (Albedo)</h3>
+        <div class="color-block">
+          <div class="input-row">
+            <label style="color: #e74c3c">Red (R)</label>
+            <input
+              type="range"
+              min="0"
+              max="255"
+              step="1"
+              value="255"
+              id="matR_sld"
+              oninput="sync('matR', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="0"
+              max="255"
+              value="255"
+              id="matR_num"
+              oninput="sync('matR', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label style="color: #2ecc71">Green (G)</label>
+            <input
+              type="range"
+              min="0"
+              max="255"
+              step="1"
+              value="150"
+              id="matG_sld"
+              oninput="sync('matG', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="0"
+              max="255"
+              value="150"
+              id="matG_num"
+              oninput="sync('matG', this.value, 'sld')"
+            />
+          </div>
+          <div class="input-row">
+            <label style="color: #3498db">Blue (B)</label>
+            <input
+              type="range"
+              min="0"
+              max="255"
+              step="1"
+              value="50"
+              id="matB_sld"
+              oninput="sync('matB', this.value, 'num')"
+            />
+            <input
+              type="number"
+              min="0"
+              max="255"
+              value="50"
+              id="matB_num"
+              oninput="sync('matB', this.value, 'sld')"
+            />
+          </div>
+        </div>
+
+        <!-- INPUT KONFIGURASI LAMPU -->
+        <h3>3. Konfigurasi Titik Cahaya (Lampu Virtual)</h3>
+        <div id="lights-container">
+          <!-- Lampu 1 otomatis terbuat -->
+        </div>
+        <button type="button" onclick="addLight()" style="background: #2ecc71">
+          + Tambah Lampu Baru
+        </button>
+      </div>
+
+      <!-- PANEL VISUALISASI & HITUNGAN KANAN -->
+      <div class="card">
+        <h2>Visualisasi Ruang 3D (Interaktif)</h2>
+        <div
+          style="
+            font-size: 0.85em;
+            color: #e67e22;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+          "
+        >
+          💡 Tip: Klik dan geser (drag) di area gambar di bawah untuk memutar
+          kamera 3D.
+        </div>
+        <canvas id="renderCanvas"></canvas>
+
+        <div class="result-box">
+          <div>
+            <div style="font-size: 0.85em; opacity: 0.8">
+              HASIL AKHIR WARNA BIDANG
+            </div>
+            <div
+              id="final-color-text"
+              style="
+                font-size: 1.3em;
+                font-weight: bold;
+                font-family: monospace;
+              "
+            >
+              RGB: (255, 255, 255)
+            </div>
+          </div>
+          <div id="final-color-box" class="color-preview"></div>
+        </div>
+
+        <h2>Langkah Perhitungan Manual (Step-by-Step)</h2>
+        <div id="math-steps">
+          <p style="color: #777">Menginisialisasi sistem perhitungan...</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let lightIds = [];
+      let lightCounter = 0;
+
+      // --- Variabel State untuk Rotasi 3D Interaktif ---
+      let rotX = 0.5; // Sudut rotasi sumbu X (Pitch) awal
+      let rotY = -0.785; // Sudut rotasi sumbu Y (Yaw) awal
+      let isDragging = false;
+      let lastMouseX = 0;
+      let lastMouseY = 0;
+
+      // --- Cache Data untuk Render Cepat Mouse (Tanpa hitung ulang KaTeX) ---
+      let cachedV1,
+        cachedV2,
+        cachedV3,
+        cachedCentroid,
+        cachedNormal,
+        cachedLights,
+        cachedFillHex;
+
+      // Fungsi utilitas sinkronisasi dua arah (Slider <-> Number Box)
+      function sync(id, value, targetType) {
+        let val = parseFloat(value);
+        if (isNaN(val)) val = 0;
+
+        // Ambil batasan min/max dari elemen asal
+        const elementAsal = document.getElementById(
+          id + (targetType === "num" ? "_sld" : "_num"),
+        );
+        const min = parseFloat(elementAsal.min);
+        const max = parseFloat(elementAsal.max);
+
+        if (val < min) val = min;
+        if (val > max) val = max;
+
+        if (targetType === "num") {
+          document.getElementById(id + "_num").value = val;
+        } else {
+          document.getElementById(id + "_sld").value = val;
+        }
+
+        // Picu kalkulasi ulang secara real-time
+        calculate();
+      }
+
+      // Fungsi Matematika Vektor Klasik
+      const subVec = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+      const addVec = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+      const crossProd = (a, b) => [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+      ];
+      const dotProd = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      const magnitude = (v) => Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
+      const normalize = (v) => {
+        const mag = magnitude(v);
+        return mag === 0 ? [0, 0, 0] : [v[0] / mag, v[1] / mag, v[2] / mag];
+      };
+      const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+      const rgbToHex = (r, g, b) =>
+        "#" +
+        [r, g, b]
+          .map((x) => {
+            const hex = x.toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+          })
+          .join("");
+
+      // Fungsi menambah blok pengaturan lampu baru beserta slider-nya
+      window.addLight = function () {
+        lightCounter++;
+        const id = lightCounter;
+        lightIds.push(id);
+
+        const container = document.getElementById("lights-container");
+        const div = document.createElement("div");
+        div.className = "light-item";
+        div.id = `light-block-${id}`;
+
+        // Atur nilai default yang bervariasi agar tidak menumpuk di satu koordinat
+        const defX = id === 1 ? 0 : id === 2 ? -8 : 0;
+        const defY = id === 1 ? 8 : id === 2 ? 8 : -5;
+        const defZ = id === 1 ? 2.5 : id === 2 ? 10 : 15;
+
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong>Lampu Virtual #${id}</strong>
+                ${id > 1 ? `<button type="button" class="btn-danger" onclick="removeLight(${id})">Hapus</button>` : ""}
+            </div>
+            <!-- Posisi Lampu -->
+            <div class="input-row"><label>Posisi X</label><input type="range" min="-30" max="30" step="0.5" value="${defX}" id="l${id}x_sld" oninput="sync('l${id}x', this.value, 'num')"><input type="number" min="-30" max="30" step="0.5" value="${defX}" id="l${id}x_num" oninput="sync('l${id}x', this.value, 'sld')"></div>
+            <div class="input-row"><label>Posisi Y</label><input type="range" min="-30" max="30" step="0.5" value="${defY}" id="l${id}y_sld" oninput="sync('l${id}y', this.value, 'num')"><input type="number" min="-30" max="30" step="0.5" value="${defY}" id="l${id}y_num" oninput="sync('l${id}y', this.value, 'sld')"></div>
+            <div class="input-row"><label>Posisi Z</label><input type="range" min="-30" max="30" step="0.5" value="${defZ}" id="l${id}z_sld" oninput="sync('l${id}z', this.value, 'num')"><input type="number" min="-30" max="30" step="0.5" value="${defZ}" id="l${id}z_num" oninput="sync('l${id}z', this.value, 'sld')"></div>
+            <!-- Warna Lampu -->
+            <div class="input-row"><label style="color: #e74c3c;">Lampu R</label><input type="range" min="0" max="255" step="1" value="255" id="l${id}R_sld" oninput="sync('l${id}R', this.value, 'num')"><input type="number" min="0" max="255" value="255" id="l${id}R_num" oninput="sync('l${id}R', this.value, 'sld')"></div>
+            <div class="input-row"><label style="color: #2ecc71;">Lampu G</label><input type="range" min="0" max="255" step="1" value="255" id="l${id}G_sld" oninput="sync('l${id}G', this.value, 'num')"><input type="number" min="0" max="255" value="255" id="l${id}G_num" oninput="sync('l${id}G', this.value, 'sld')"></div>
+            <div class="input-row"><label style="color: #3498db;">Lampu B</label><input type="range" min="0" max="255" step="1" value="255" id="l${id}B_sld" oninput="sync('l${id}B', this.value, 'num')"><input type="number" min="0" max="255" value="255" id="l${id}B_num" oninput="sync('l${id}B', this.value, 'sld')"></div>
+        `;
+        container.appendChild(div);
+        calculate();
+      };
+
+      window.removeLight = function (id) {
+        const block = document.getElementById(`light-block-${id}`);
+        if (block) block.remove();
+        lightIds = lightIds.filter((item) => item !== id);
+        calculate();
+      };
+
+      // INTI ENGINE PERHITUNGAN MATEMATIKA KLASIK
+      function calculate() {
+        // Ambil Data Vertex pembentuk bidang segitiga
+        const v1 = [
+          parseFloat(document.getElementById("v1x_num").value),
+          parseFloat(document.getElementById("v1y_num").value),
+          parseFloat(document.getElementById("v1z_num").value),
+        ];
+        const v2 = [
+          parseFloat(document.getElementById("v2x_num").value),
+          parseFloat(document.getElementById("v2y_num").value),
+          parseFloat(document.getElementById("v2z_num").value),
+        ];
+        const v3 = [
+          parseFloat(document.getElementById("v3x_num").value),
+          parseFloat(document.getElementById("v3y_num").value),
+          parseFloat(document.getElementById("v3z_num").value),
+        ];
+
+        // Ambil Data Albedo/Warna Material Bidang (Skala 0-1 untuk perhitungan fisika)
+        const matColor = [
+          parseFloat(document.getElementById("matR_num").value) / 255,
+          parseFloat(document.getElementById("matG_num").value) / 255,
+          parseFloat(document.getElementById("matB_num").value) / 255,
+        ];
+
+        // Ambil Semua Data Lampu yang aktif
+        const lights = [];
+        lightIds.forEach((id) => {
+          lights.push({
+            id: id,
+            pos: [
+              parseFloat(document.getElementById(`l${id}x_num`).value),
+              parseFloat(document.getElementById(`l${id}y_num`).value),
+              parseFloat(document.getElementById(`l${id}z_num`).value),
+            ],
+            color: [
+              parseFloat(document.getElementById(`l${id}R_num`).value) / 255,
+              parseFloat(document.getElementById(`l${id}G_num`).value) / 255,
+              parseFloat(document.getElementById(`l${id}B_num`).value) / 255,
+            ],
+          });
+        });
+
+        let stepsHTML = "";
+        // Fungsi pembantu untuk merender ekspresi matematika KaTeX ke dokumen HTML
+        const addStep = (title, latex) => {
+          const stepId = "step-" + Math.random().toString(36).substr(2, 9);
+          stepsHTML += `<div class="step"><strong>${title}</strong><div id="${stepId}"></div></div>`;
+          setTimeout(() => {
+            const el = document.getElementById(stepId);
+            if (el && typeof katex !== "undefined") {
+              katex.render(latex, el, {
+                throwOnError: false,
+                displayMode: true,
+              });
+            }
+          }, 50);
+        };
+
+        // STEP 1: Menghitung Vektor Pembentuk Bidang Segitiga
+        const vecA = subVec(v2, v1);
+        const vecB = subVec(v3, v1);
+        addStep(
+          "Langkah 1: Menghitung Vektor Sisi Pembentuk Bidang Segitiga",
+          `\\vec{A} = V_2 - V_1 = \\begin{bmatrix} ${v2[0]} \\\\ ${v2[1]} \\\\ ${v2[2]} \\end{bmatrix} - \\begin{bmatrix} ${v1[0]} \\\\ ${v1[1]} \\\\ ${v1[2]} \\end{bmatrix} = \\begin{bmatrix} ${v2[0]} - ${v1[0]} \\\\ ${v2[1]} - ${v1[1]} \\\\ ${v2[2]} - ${v1[2]} \\end{bmatrix} = \\begin{bmatrix} ${vecA[0]} \\\\ ${vecA[1]} \\\\ ${vecA[2]} \\end{bmatrix} \\\\
+             \\vec{B} = V_3 - V_1 = \\begin{bmatrix} ${v3[0]} \\\\ ${v3[1]} \\\\ ${v3[2]} \\end{bmatrix} - \\begin{bmatrix} ${v1[0]} \\\\ ${v1[1]} \\\\ ${v1[2]} \\end{bmatrix} = \\begin{bmatrix} ${v3[0]} - ${v1[0]} \\\\ ${v3[1]} - ${v1[1]} \\\\ ${v3[2]} - ${v1[2]} \\end{bmatrix} = \\begin{bmatrix} ${vecB[0]} \\\\ ${vecB[1]} \\\\ ${vecB[2]} \\end{bmatrix}`,
+        );
+
+        // STEP 2: Cross Product untuk mencari Vektor Normal Kebalikan
+        const normalRaw = crossProd(vecA, vecB);
+        const magNormalSq =
+          normalRaw[0] ** 2 + normalRaw[1] ** 2 + normalRaw[2] ** 2;
+        const magNormal = Math.sqrt(magNormalSq);
+        const normal = normalize(normalRaw);
+        addStep(
+          "Langkah 2: Menghitung Vektor Normal Bidang (Cross Product) & Normalisasi",
+          `\\vec{N}_{raw} = \\vec{A} \\times \\vec{B} = \\begin{bmatrix} (${vecA[1]}\\times${vecB[2]}) - (${vecA[2]}\\times${vecB[1]}) \\\\ (${vecA[2]}\\times${vecB[0]}) - (${vecA[0]}\\times${vecB[2]}) \\\\ (${vecA[0]}\\times${vecB[1]}) - (${vecA[1]}\\times${vecB[0]}) \\end{bmatrix} = \\begin{bmatrix} ${normalRaw[0]} \\\\ ${normalRaw[1]} \\\\ ${normalRaw[2]} \\end{bmatrix} \\\\
+             |\\vec{N}_{raw}| = \\sqrt{(${normalRaw[0]})^2 + (${normalRaw[1]})^2 + (${normalRaw[2]})^2} = \\sqrt{${magNormalSq}} = ${magNormal.toFixed(4)} \\\\
+             \\hat{N} = \\frac{\\vec{N}_{raw}}{|\\vec{N}_{raw}|} = \\begin{bmatrix} \\frac{${normalRaw[0]}}{${magNormal.toFixed(4)}} \\\\[1ex] \\frac{${normalRaw[1]}}{${magNormal.toFixed(4)}} \\\\[1ex] \\frac{${normalRaw[2]}}{${magNormal.toFixed(4)}} \\end{bmatrix} = \\begin{bmatrix} ${normal[0].toFixed(4)} \\\\ ${normal[1].toFixed(4)} \\\\ ${normal[2].toFixed(4)} \\end{bmatrix}`,
+        );
+
+        // STEP 3: Mencari Titik Tengah (Centroid) untuk menghitung arah datang cahaya
+        const sumX = v1[0] + v2[0] + v3[0];
+        const sumY = v1[1] + v2[1] + v3[1];
+        const sumZ = v1[2] + v2[2] + v3[2];
+        const centroid = [sumX / 3, sumY / 3, sumZ / 3];
+        addStep(
+          "Langkah 3: Menghitung Titik Tengah Bidang (Centroid Segitiga)",
+          `P_c = \\frac{V_1 + V_2 + V_3}{3} = \\begin{bmatrix} \\frac{${v1[0]}+${v2[0]}+${v3[0]}}{3} \\\\[1ex] \\frac{${v1[1]}+${v2[1]}+${v3[1]}}{3} \\\\[1ex] \\frac{${v1[2]}+${v2[2]}+${v3[2]}}{3} \\end{bmatrix} = \\begin{bmatrix} \\frac{${sumX}}{3} \\\\[1ex] \\frac{${sumY}}{3} \\\\[1ex] \\frac{${sumZ}}{3} \\end{bmatrix} = \\begin{bmatrix} ${centroid[0].toFixed(4)} \\\\ ${centroid[1].toFixed(4)} \\\\ ${centroid[2].toFixed(4)} \\end{bmatrix}`,
+        );
+
+        // STEP 4: Akumulasi Kontribusi Intensitas Pencahayaan dari Seluruh Lampu
+        let finalColorAcc = [0, 0, 0];
+
+        lights.forEach((light, index) => {
+          const lRaw = subVec(light.pos, centroid);
+          const magLSq = lRaw[0] ** 2 + lRaw[1] ** 2 + lRaw[2] ** 2;
+          const magL = Math.sqrt(magLSq);
+          const lDir = normalize(lRaw);
+
+          // Penjabaran rumus dot product sebelum hasil akhir
+          const dotProductRaw = `(${normal[0].toFixed(4)} \\times ${lDir[0].toFixed(4)}) + (${normal[1].toFixed(4)} \\times ${lDir[1].toFixed(4)}) + (${normal[2].toFixed(4)} \\times ${lDir[2].toFixed(4)})`;
+          const dot = dotProd(normal, lDir);
+          const diffuseFactor = Math.max(0, dot); // Rumus Lambertian cos(theta)
+
+          const colorContrib = [
+            matColor[0] * light.color[0] * diffuseFactor,
+            matColor[1] * light.color[1] * diffuseFactor,
+            matColor[2] * light.color[2] * diffuseFactor,
+          ];
+
+          finalColorAcc = addVec(finalColorAcc, colorContrib);
+
+          addStep(
+            `Langkah 4.${index + 1}: Evaluasi Intensitas Cahaya Lampu Virtual #${light.id}`,
+            `\\vec{L}_{raw} = P_{L${light.id}} - P_c = \\begin{bmatrix} ${light.pos[0]} \\\\ ${light.pos[1]} \\\\ ${light.pos[2]} \\end{bmatrix} - \\begin{bmatrix} ${centroid[0].toFixed(4)} \\\\ ${centroid[1].toFixed(4)} \\\\ ${centroid[2].toFixed(4)} \\end{bmatrix} = \\begin{bmatrix} ${light.pos[0]} - ${centroid[0].toFixed(4)} \\\\ ${light.pos[1]} - ${centroid[1].toFixed(4)} \\\\ ${light.pos[2]} - ${centroid[2].toFixed(4)} \\end{bmatrix} = \\begin{bmatrix} ${lRaw[0].toFixed(4)} \\\\ ${lRaw[1].toFixed(4)} \\\\ ${lRaw[2].toFixed(4)} \\end{bmatrix} \\\\
+                 |\\vec{L}_{raw}| = \\sqrt{(${lRaw[0].toFixed(4)})^2 + (${lRaw[1].toFixed(4)})^2 + (${lRaw[2].toFixed(4)})^2} = \\sqrt{${magLSq.toFixed(4)}} = ${magL.toFixed(4)} \\\\
+                 \\hat{L} = \\frac{\\vec{L}_{raw}}{|\\vec{L}_{raw}|} = \\begin{bmatrix} \\frac{${lRaw[0].toFixed(4)}}{${magL.toFixed(4)}} \\\\[1ex] \\frac{${lRaw[1].toFixed(4)}}{${magL.toFixed(4)}} \\\\[1ex] \\frac{${lRaw[2].toFixed(4)}}{${magL.toFixed(4)}} \\end{bmatrix} = \\begin{bmatrix} ${lDir[0].toFixed(4)} \\\\ ${lDir[1].toFixed(4)} \\\\ ${lDir[2].toFixed(4)} \\end{bmatrix} \\\\
+                 I_{diffuse} = \\max(0, \\hat{N} \\cdot \\hat{L}) = \\max(0, ${dotProductRaw}) = \\max(0, ${dot.toFixed(4)}) = ${diffuseFactor.toFixed(4)} \\\\
+                 C_{\\text{kontribusi}} = C_{\\text{material}} \\times C_{\\text{lampu}} \\times I_{diffuse} \\\\
+                 C_{\\text{kontribusi}} = \\begin{bmatrix} ${matColor[0].toFixed(2)} \\times ${light.color[0].toFixed(2)} \\times ${diffuseFactor.toFixed(4)} \\\\ ${matColor[1].toFixed(2)} \\times ${light.color[1].toFixed(2)} \\times ${diffuseFactor.toFixed(4)} \\\\ ${matColor[2].toFixed(2)} \\times ${light.color[2].toFixed(2)} \\times ${diffuseFactor.toFixed(4)} \\end{bmatrix} = \\begin{bmatrix} ${colorContrib[0].toFixed(4)} \\\\ ${colorContrib[1].toFixed(4)} \\\\ ${colorContrib[2].toFixed(4)} \\end{bmatrix}`,
+          );
+        });
+
+        // STEP 5: Konversi Nilai Menjadi Format Warna RGB Standar Komputer (0-255)
+        const preR = finalColorAcc[0] * 255;
+        const preG = finalColorAcc[1] * 255;
+        const preB = finalColorAcc[2] * 255;
+
+        const finalRgb = [
+          Math.round(clamp(preR, 0, 255)),
+          Math.round(clamp(preG, 0, 255)),
+          Math.round(clamp(preB, 0, 255)),
+        ];
+        const finalHex = rgbToHex(finalRgb[0], finalRgb[1], finalRgb[2]);
+
+        addStep(
+          "Langkah 5: Akumulasi Warna & Batasan Nilai Piksel (Clamping 0 - 255)",
+          `C_{\\text{final (0-1)}} = \\sum C_{\\text{kontribusi}} = \\begin{bmatrix} ${finalColorAcc[0].toFixed(4)} \\\\ ${finalColorAcc[1].toFixed(4)} \\\\ ${finalColorAcc[2].toFixed(4)} \\end{bmatrix} \\\\
+             C_{\\text{final (0-255)}} = C_{\\text{final (0-1)}} \\times 255 = \\begin{bmatrix} ${finalColorAcc[0].toFixed(4)} \\times 255 \\\\ ${finalColorAcc[1].toFixed(4)} \\times 255 \\\\ ${finalColorAcc[2].toFixed(4)} \\times 255 \\end{bmatrix} = \\begin{bmatrix} ${preR.toFixed(2)} \\\\ ${preG.toFixed(2)} \\\\ ${preB.toFixed(2)} \\end{bmatrix} \\\\
+             C_{\\text{RGB}} = \\text{Round}(\\text{Clamp}(C_{\\text{final (0-255)}}, 0, 255)) = \\begin{bmatrix} \\text{Round}(\\text{Clamp}(${preR.toFixed(2)}, 0, 255)) \\\\ \\text{Round}(\\text{Clamp}(${preG.toFixed(2)}, 0, 255)) \\\\ \\text{Round}(\\text{Clamp}(${preB.toFixed(2)}, 0, 255)) \\end{bmatrix} = \\begin{bmatrix} ${finalRgb[0]} \\\\ ${finalRgb[1]} \\\\ ${finalRgb[2]} \\end{bmatrix}_{RGB}`,
+        );
+
+        // Perbarui Tampilan Teks UI
+        document.getElementById("math-steps").innerHTML = stepsHTML;
+        document.getElementById("final-color-text").innerText =
+          `RGB: (${finalRgb.join(", ")}) | HEX: ${finalHex}`;
+        document.getElementById("final-color-box").style.backgroundColor =
+          finalHex;
+
+        // Simpan vektor ke variabel Global Cache agar bisa digeser dengan mouse tanpa lag
+        cachedV1 = v1;
+        cachedV2 = v2;
+        cachedV3 = v3;
+        cachedCentroid = centroid;
+        cachedNormal = normal;
+        cachedLights = lights;
+        cachedFillHex = finalHex;
+
+        // Render hasil visualisasi ke dalam Canvas
+        drawCanvas3D(v1, v2, v3, centroid, normal, lights, finalHex);
+      }
+
+      // PROYEKSI KLASIK MATEMATIKA (3D KE 2D CANVAS) DENGAN MATRIKS ROTASI
+      function drawCanvas3D(v1, v2, v3, centroid, normal, lights, fillHex) {
+        const canvas = document.getElementById("renderCanvas");
+
+        // PENCEGAHAN STRETCH: Set ukuran memori canvas persis sama dengan ukuran yang ditampilkan CSS
+        if (
+          canvas.width !== canvas.clientWidth ||
+          canvas.height !== canvas.clientHeight
+        ) {
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
+        }
+
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const zoomScale = 12; // Faktor skala visualisasi ruang kamera
+        // Mengatur titik tengah koordinat mengikuti perubahan lebar canvas
+        const originX = canvas.width / 2;
+        const originY = canvas.height / 2 + 30;
+
+        // Transformasi Rotasi 3D Matematika Klasik (Euler Yaw & Pitch)
+        const project3D = (x, y, z) => {
+          // 1. Rotasi terhadap Sumbu Y (Pan Kiri/Kanan)
+          let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
+          let z1 = z * Math.cos(rotY) + x * Math.sin(rotY);
+          let y1 = y;
+
+          // 2. Rotasi terhadap Sumbu X (Tilt Atas/Bawah)
+          let y2 = y1 * Math.cos(rotX) - z1 * Math.sin(rotX);
+          let z2 = z1 * Math.cos(rotX) + y1 * Math.sin(rotX);
+          let x2 = x1;
+
+          return { x: originX + x2 * zoomScale, y: originY - y2 * zoomScale };
+        };
+
+        // 0. Gambar Sumbu Koordinat X, Y, Z (Grid Orientasi Ruang)
+        const pOrigin = project3D(0, 0, 0);
+        const pX = project3D(25, 0, 0);
+        const pXNeg = project3D(-25, 0, 0);
+        const pY = project3D(0, 25, 0);
+        const pYNeg = project3D(0, -25, 0);
+        const pZ = project3D(0, 0, 25);
+        const pZNeg = project3D(0, 0, -25);
+
+        ctx.font = "bold 12px Arial";
+
+        // Sumbu X (Merah Transparan)
+        ctx.beginPath();
+        ctx.moveTo(pXNeg.x, pXNeg.y);
+        ctx.lineTo(pX.x, pX.y);
+        ctx.strokeStyle = "rgba(231, 76, 60, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = "#c0392b";
+        ctx.fillText("X", pX.x + 5, pX.y + 5);
+
+        // Sumbu Y (Hijau Transparan)
+        ctx.beginPath();
+        ctx.moveTo(pYNeg.x, pYNeg.y);
+        ctx.lineTo(pY.x, pY.y);
+        ctx.strokeStyle = "rgba(46, 204, 113, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = "#27ae60";
+        ctx.fillText("Y", pY.x - 5, pY.y - 8);
+
+        // Sumbu Z (Biru Transparan)
+        ctx.beginPath();
+        ctx.moveTo(pZNeg.x, pZNeg.y);
+        ctx.lineTo(pZ.x, pZ.y);
+        ctx.strokeStyle = "rgba(52, 152, 219, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = "#2980b9";
+        ctx.fillText("Z", pZ.x - 12, pZ.y + 10);
+
+        // Titik Origin (0,0,0)
+        ctx.beginPath();
+        ctx.arc(pOrigin.x, pOrigin.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#7f8c8d";
+        ctx.fill();
+
+        const p1 = project3D(...v1);
+        const p2 = project3D(...v2);
+        const p3 = project3D(...v3);
+        const pc = project3D(...centroid);
+
+        // 1. Gambar Segitiga Bidang Objek
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.closePath();
+
+        // Buat bidang menjadi semi-transparan
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = fillHex;
+        ctx.fill();
+        ctx.globalAlpha = 1.0; // Kembalikan opacity normal untuk elemen lain
+
+        ctx.strokeStyle = "#2c3e50";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Beri Label Nama Vertex di Sudut-Sudut Segitiga Objek
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 11px Arial";
+        ctx.fillText("V1", p1.x - 12, p1.y - 5);
+        ctx.fillText("V2", p2.x + 8, p2.y + 12);
+        ctx.fillText("V3", p3.x - 12, p3.y + 12);
+
+        // 2. Gambar Vektor Normal Bidang Satuan (Garis Merah Tegak Lurus)
+        const normalMultiplier = 6;
+        const nEndVec = addVec(centroid, [
+          normal[0] * normalMultiplier,
+          normal[1] * normalMultiplier,
+          normal[2] * normalMultiplier,
+        ]);
+        const pn = project3D(...nEndVec);
+
+        ctx.beginPath();
+        ctx.moveTo(pc.x, pc.y);
+        ctx.lineTo(pn.x, pn.y);
+        ctx.strokeStyle = "#e74c3c";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Kepala Anak Panah Vektor Normal
+        ctx.fillStyle = "#e74c3c";
+        ctx.beginPath();
+        ctx.arc(pn.x, pn.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText("Normal (N)", pn.x + 8, pn.y - 4);
+
+        // 3. Gambar Semua Titik Lampu Virtual dan Vektor Sinar Cahayanya
+        lights.forEach((light) => {
+          const pl = project3D(...light.pos);
+          const r = Math.round(light.color[0] * 255);
+          const g = Math.round(light.color[1] * 255);
+          const b = Math.round(light.color[2] * 255);
+
+          // Hubungkan Garis Sinar Putus-Putus dari Lampu ke Centroid
+          ctx.beginPath();
+          ctx.moveTo(pl.x, pl.y);
+          ctx.lineTo(pc.x, pc.y);
+          ctx.strokeStyle = "rgba(230, 126, 34, 0.6)";
+          ctx.setLineDash([4, 4]);
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.setLineDash([]); // Matikan dash line kembali ke normal
+
+          // Gambar Representasi Bola Lampu Bersinar
+          ctx.beginPath();
+          ctx.arc(pl.x, pl.y, 8, 0, Math.PI * 2);
+          ctx.fillStyle = rgbToHex(r, g, b);
+          ctx.fill();
+          ctx.strokeStyle = "#d35400";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.fillStyle = "#d35400";
+          ctx.fillText(`Lampu #${light.id}`, pl.x + 10, pl.y - 4);
+        });
+      }
+
+      // Inisialisasi Pertama saat Aplikasi Dibuka
+      window.onload = () => {
+        addLight(); // Otomatis buat lampu pertama
+
+        // --- Setup Event Listener Mouse untuk Rotasi Kamera 3D ---
+        const canvas = document.getElementById("renderCanvas");
+        canvas.style.cursor = "grab";
+
+        canvas.addEventListener("mousedown", (e) => {
+          isDragging = true;
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+          canvas.style.cursor = "grabbing";
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+          if (isDragging && cachedV1) {
+            const deltaX = e.clientX - lastMouseX;
+            const deltaY = e.clientY - lastMouseY;
+
+            // Rotasi disesuaikan dengan arah pergerakan drag mouse
+            rotY += deltaX * 0.01;
+            rotX -= deltaY * 0.01;
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            // Hanya memanggil render kanvas, tanpa memanggil perhitungan ulang KaTeX
+            drawCanvas3D(
+              cachedV1,
+              cachedV2,
+              cachedV3,
+              cachedCentroid,
+              cachedNormal,
+              cachedLights,
+              cachedFillHex,
+            );
+          }
+        });
+
+        canvas.addEventListener("mouseup", () => {
+          isDragging = false;
+          canvas.style.cursor = "grab";
+        });
+        canvas.addEventListener("mouseleave", () => {
+          isDragging = false;
+          canvas.style.cursor = "grab";
+        });
+
+        // Update proporsi 3D bila pengguna me-resize ukuran jendela browser
+        window.addEventListener("resize", () => {
+          if (cachedV1) {
+            drawCanvas3D(
+              cachedV1,
+              cachedV2,
+              cachedV3,
+              cachedCentroid,
+              cachedNormal,
+              cachedLights,
+              cachedFillHex,
+            );
+          }
+        });
+
+        // Beri jeda sedikit memastikan KaTeX sudah dimuat jika koneksi lambat
+        setTimeout(calculate, 100);
+      };
+    </script>
+  </body>
+</html>

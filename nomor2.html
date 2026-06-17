@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalkulator Matriks Kamera Perspektif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f1f5f9;
+      }
+      .math-block {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      }
+      .step-title {
+        font-weight: bold;
+        color: #1e293b;
+        margin-bottom: 10px;
+        display: block;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 5px;
+      }
+      #canvas-container {
+        width: 100%;
+        height: 500px;
+        background-color: #0f172a;
+        border-radius: 1rem;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body class="p-8">
+    <div class="max-w-7xl mx-auto">
+      <h1 class="text-3xl font-extrabold text-slate-900 mb-8">
+        Kalkulator & Visualisasi Matriks Kamera
+      </h1>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Panel Input -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-xl font-bold mb-4">Input Parameter</h2>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >Eye (X,Y,Z)</label
+              >
+              <div class="flex gap-1">
+                <input
+                  type="number"
+                  id="eyeX"
+                  value="0"
+                  class="w-full p-2 border rounded"
+                /><input
+                  type="number"
+                  id="eyeY"
+                  value="5"
+                  class="w-full p-2 border rounded"
+                /><input
+                  type="number"
+                  id="eyeZ"
+                  value="10"
+                  class="w-full p-2 border rounded"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >Target (X,Y,Z)</label
+              >
+              <div class="flex gap-1">
+                <input
+                  type="number"
+                  id="centerX"
+                  value="0"
+                  class="w-full p-2 border rounded"
+                /><input
+                  type="number"
+                  id="centerY"
+                  value="5"
+                  class="w-full p-2 border rounded"
+                /><input
+                  type="number"
+                  id="centerZ"
+                  value="0"
+                  class="w-full p-2 border rounded"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >Roll (°)</label
+              ><input
+                type="number"
+                id="upRoll"
+                value="0"
+                class="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >FOV (°)</label
+              ><input
+                type="number"
+                id="fov"
+                value="45"
+                class="w-full p-2 border rounded"
+              />
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4 mt-4">
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >Aspect</label
+              ><input
+                type="number"
+                id="aspect"
+                value="1.77"
+                step="0.1"
+                class="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >Near</label
+              ><input
+                type="number"
+                id="near"
+                value="0.1"
+                step="0.1"
+                class="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-500"
+                >Far</label
+              ><input
+                type="number"
+                id="far"
+                value="34"
+                class="w-full p-2 border rounded"
+              />
+            </div>
+          </div>
+          <div id="canvas-container" class="mt-6">
+            <canvas id="visCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Panel Matematika -->
+        <div class="space-y-6">
+          <div class="math-block">
+            <span class="step-title">1. View Matrix (V)</span>
+            <div id="math-view"></div>
+            <div id="steps-view" class="mt-4 text-sm text-slate-600"></div>
+          </div>
+          <div class="math-block">
+            <span class="step-title">2. Projection Matrix (P)</span>
+            <div id="math-proj"></div>
+            <div id="steps-proj" class="mt-4 text-sm text-slate-600"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let scene, renderer, obsCamera, controls, simCamera, cameraHelper;
+
+      function init3D() {
+        const canvas = document.getElementById("visCanvas");
+        const container = document.getElementById("canvas-container");
+        scene = new THREE.Scene();
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(container.clientWidth, 500);
+        obsCamera = new THREE.PerspectiveCamera(
+          45,
+          container.clientWidth / 500,
+          0.1,
+          1000,
+        );
+        obsCamera.position.set(20, 20, 30);
+        controls = new THREE.OrbitControls(obsCamera, renderer.domElement);
+        scene.add(
+          new THREE.GridHelper(50, 50, 0x475569, 0x334155),
+          new THREE.AxesHelper(10),
+        );
+        simCamera = new THREE.PerspectiveCamera(45, 1.77, 0.1, 34);
+        cameraHelper = new THREE.CameraHelper(simCamera);
+        scene.add(cameraHelper);
+        animate();
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, obsCamera);
+      }
+
+      function update() {
+        const e = new THREE.Vector3(
+          parseFloat(document.getElementById("eyeX").value),
+          parseFloat(document.getElementById("eyeY").value),
+          parseFloat(document.getElementById("eyeZ").value),
+        );
+        const c = new THREE.Vector3(
+          parseFloat(document.getElementById("centerX").value),
+          parseFloat(document.getElementById("centerY").value),
+          parseFloat(document.getElementById("centerZ").value),
+        );
+        const roll =
+          (parseFloat(document.getElementById("upRoll").value) * Math.PI) / 180;
+        const fov = parseFloat(document.getElementById("fov").value);
+        const aspect = parseFloat(document.getElementById("aspect").value);
+        const n = parseFloat(document.getElementById("near").value);
+        const f = parseFloat(document.getElementById("far").value);
+
+        simCamera.position.copy(e);
+        simCamera.up.set(-Math.sin(roll), Math.cos(roll), 0);
+        simCamera.lookAt(c);
+        simCamera.fov = fov;
+        simCamera.aspect = aspect;
+        simCamera.near = n;
+        simCamera.far = f;
+        simCamera.updateProjectionMatrix();
+        simCamera.updateMatrixWorld();
+        cameraHelper.update();
+
+        const fwd = new THREE.Vector3().subVectors(c, e).normalize();
+        const right = new THREE.Vector3()
+          .crossVectors(fwd, simCamera.up)
+          .normalize();
+        const up = new THREE.Vector3().crossVectors(right, fwd);
+        const sy = 1 / Math.tan((fov * Math.PI) / 180 / 2);
+        const sx = sy / aspect;
+        const m = simCamera.matrixWorldInverse.elements;
+        const p = simCamera.projectionMatrix.elements;
+
+        katex.render(
+          `V = \\begin{pmatrix} ${right.x.toFixed(2)} & ${right.y.toFixed(2)} & ${right.z.toFixed(2)} & ${-right.dot(e).toFixed(2)} \\\\ ${up.x.toFixed(2)} & ${up.y.toFixed(2)} & ${up.z.toFixed(2)} & ${-up.dot(e).toFixed(2)} \\\\ ${-fwd.x.toFixed(2)} & ${-fwd.y.toFixed(2)} & ${-fwd.z.toFixed(2)} & ${fwd.dot(e).toFixed(2)} \\\\ 0 & 0 & 0 & 1 \\end{pmatrix}`,
+          document.getElementById("math-view"),
+        );
+
+        katex.render(
+          `P = \\begin{pmatrix} ${sx.toFixed(2)} & 0 & 0 & 0 \\\\ 0 & ${sy.toFixed(2)} & 0 & 0 \\\\ 0 & 0 & ${-(f + n) / (f - n).toFixed(2)} & ${-(2 * f * n) / (f - n).toFixed(2)} \\\\ 0 & 0 & -1 & 0 \\end{pmatrix}`,
+          document.getElementById("math-proj"),
+        );
+
+        document.getElementById("steps-view").innerHTML =
+          `Langkah V: <br>1. Basis: Forward (f) = norm(C-E), Right (r) = norm(f x Up), Up' = r x f.<br>2. Konstruksi matriks rotasi (3x3) diikuti translasi dengan dot product dari -Eye.`;
+        document.getElementById("steps-proj").innerHTML =
+          `Langkah P: <br>1. $S_y = 1 / \\tan(\\frac{FOV}{2}) = ${sy.toFixed(2)}$.<br>2. $S_x = S_y / Aspect = ${sx.toFixed(2)}$.<br>3. Pemetaan Z: $m_{33} = -\\frac{f+n}{f-n}$, $m_{34} = -\\frac{2fn}{f-n}$.`;
+      }
+      window.onload = () => {
+        init3D();
+        document
+          .querySelectorAll("input")
+          .forEach((i) => i.addEventListener("input", update));
+        update();
+      };
+    </script>
+  </body>
+</html>
